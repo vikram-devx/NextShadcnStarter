@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Plane, Github, Twitter, Info } from "lucide-react";
+import { Dices, HelpCircle, Shield, Lock, Phone, Mail } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -7,98 +7,72 @@ export default function Footer() {
       <div className="container flex flex-col gap-4 py-10 md:flex-row md:py-8">
         <div className="flex-1">
           <div className="flex h-10 items-center space-x-2">
-            <Plane className="h-6 w-6" />
-            <span className="font-bold">NextJS Starter</span>
+            <Dices className="h-6 w-6 text-primary" />
+            <span className="font-bold">Sata Matka</span>
           </div>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md">
+            A premier gaming platform for Sata Matka enthusiasts. Play, win, and enjoy a secure and 
+            transparent betting experience.
+          </p>
         </div>
         <div className="flex flex-col md:flex-row gap-8 md:gap-16">
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Resources</h4>
+            <h4 className="text-sm font-medium">Quick Links</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/documentation" className="transition-colors hover:text-foreground/80">
-                  Documentation
+                <Link href="/" className="transition-colors hover:text-primary">
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/components" className="transition-colors hover:text-foreground/80">
-                  Components
+                <Link href="/markets" className="transition-colors hover:text-primary">
+                  Markets
                 </Link>
               </li>
               <li>
-                <a href="#" className="transition-colors hover:text-foreground/80">
-                  Examples
-                </a>
+                <Link href="/dashboard" className="transition-colors hover:text-primary">
+                  Dashboard
+                </Link>
               </li>
             </ul>
           </div>
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Links</h4>
+            <h4 className="text-sm font-medium">Games</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a 
-                  href="https://nextjs.org" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="transition-colors hover:text-foreground/80"
-                >
-                  NextJS
-                </a>
+                <span className="text-muted-foreground">Jodi</span>
               </li>
               <li>
-                <a 
-                  href="https://tailwindcss.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="transition-colors hover:text-foreground/80"
-                >
-                  Tailwind CSS
-                </a>
+                <span className="text-muted-foreground">Hurf</span>
               </li>
               <li>
-                <a 
-                  href="https://ui.shadcn.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="transition-colors hover:text-foreground/80"
-                >
-                  Shadcn UI
-                </a>
+                <span className="text-muted-foreground">Cross</span>
+              </li>
+              <li>
+                <span className="text-muted-foreground">Odd-Even</span>
               </li>
             </ul>
           </div>
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Social</h4>
+            <h4 className="text-sm font-medium">Support</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a 
-                  href="https://github.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="transition-colors hover:text-foreground/80"
-                >
-                  GitHub
-                </a>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Help Center</span>
+                </div>
               </li>
               <li>
-                <a 
-                  href="https://twitter.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="transition-colors hover:text-foreground/80"
-                >
-                  Twitter
-                </a>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Phone className="h-4 w-4" />
+                  <span>+91 1234567890</span>
+                </div>
               </li>
               <li>
-                <a 
-                  href="https://discord.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="transition-colors hover:text-foreground/80"
-                >
-                  Discord
-                </a>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Mail className="h-4 w-4" />
+                  <span>support@satamatka.com</span>
+                </div>
               </li>
             </ul>
           </div>
@@ -107,21 +81,17 @@ export default function Footer() {
       <div className="border-t py-6">
         <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-muted-foreground md:order-1">
-            © {new Date().getFullYear()} NextJS Starter. All rights reserved.
+            © {new Date().getFullYear()} Sata Matka. All rights reserved.
           </p>
           <div className="flex gap-4">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-              <Github className="h-5 w-5" />
-              <span className="sr-only">GitHub</span>
-            </a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-              <Twitter className="h-5 w-5" />
-              <span className="sr-only">Twitter</span>
-            </a>
-            <a href="https://discord.com" target="_blank" rel="noopener noreferrer" aria-label="Discord">
-              <Info className="h-5 w-5" />
-              <span className="sr-only">Discord</span>
-            </a>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Shield className="h-4 w-4 mr-1" /> 
+              <span>Secure Platform</span>
+            </div>
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Lock className="h-4 w-4 mr-1" /> 
+              <span>Privacy Protected</span>
+            </div>
           </div>
         </div>
       </div>
