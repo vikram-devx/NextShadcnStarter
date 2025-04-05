@@ -15,6 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Progress } from "@/components/ui/progress"; 
 
+// Helper function to safely format transaction types
+const formatTransactionType = (transaction: any) => {
+  if (!transaction || !transaction.type) return "Transaction";
+  return formatTransactionType(transaction);
+};
+
 // Admin-specific dashboard content
 function AdminDashboard({ 
   user, 
@@ -258,7 +264,7 @@ function AdminDashboard({
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                          {formatTransactionType(transaction)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(transaction.created_at), 'PPP')}
@@ -691,7 +697,7 @@ function SubadminDashboard({
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                          {formatTransactionType(transaction)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(transaction.created_at), 'PPP')}
@@ -1006,7 +1012,7 @@ function PlayerDashboard({
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                          {formatTransactionType(transaction)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {format(new Date(transaction.created_at), 'PPP')}
