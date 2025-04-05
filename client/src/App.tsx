@@ -7,6 +7,7 @@ import Header from "./components/layout/header";
 import Footer from "./components/layout/footer";
 import Home from "./pages/home";
 import Login from "./pages/login";
+import AuthPage from "./pages/auth-page";
 import Dashboard from "./pages/dashboard";
 import Profile from "./pages/profile";
 import Markets from "./pages/markets";
@@ -65,7 +66,10 @@ function Router() {
           {/* Public Routes */}
           <Route path="/" component={Home} />
           <Route path="/login">
-            {user ? <Dashboard /> : <Login />}
+            {user ? <Dashboard /> : <AuthPage />}
+          </Route>
+          <Route path="/auth">
+            {user ? <Dashboard /> : <AuthPage />}
           </Route>
 
           {/* Protected Routes */}

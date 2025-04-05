@@ -95,15 +95,208 @@ export class MemStorage implements IStorage {
     this.betCurrentId = 1;
     this.transactionCurrentId = 1;
     
-    // Create initial admin user
-    this.createUser({
-      username: "admin",
-      password: "admin123", // Would be hashed in a real app
-      name: "System Admin",
-      email: "admin@example.com",
-      role: "admin",
-      status: "active",
-    });
+    // Initialize sample data
+    this.initializeSampleData();
+  }
+  
+  private async initializeSampleData() {
+    try {
+      // Create admin user
+      const adminUser = await this.createUser({
+        username: "admin",
+        password: "admin123", // Would be hashed in a real app
+        name: "System Admin",
+        email: "admin@example.com",
+        role: "admin",
+        status: "active",
+      });
+
+      // Create subadmin user
+      const subadminUser = await this.createUser({
+        username: "subadmin",
+        password: "subadmin123",
+        name: "Sub Admin",
+        email: "subadmin@satamatka.com",
+        role: "subadmin",
+        status: "active",
+      });
+      
+      // Create player user
+      const playerUser = await this.createUser({
+        username: "player",
+        password: "player123",
+        name: "Test Player",
+        email: "player@satamatka.com",
+        role: "player",
+        status: "active",
+        subadmin_id: subadminUser.id,
+      });
+      
+      // Update wallet balances
+      await this.updateUser(adminUser.id, { wallet_balance: 10000 });
+      await this.updateUser(subadminUser.id, { wallet_balance: 5000 });
+      await this.updateUser(playerUser.id, { wallet_balance: 1000 });
+      
+      // Create game types
+      const jodiGame = await this.createGameType({
+        name: "Jodi Game",
+        type: "jodi",
+        description: "Bet on a pair of numbers. Win big if your chosen pair matches the result.",
+        min_bet_amount: 10,
+        max_bet_amount: 10000,
+        payout_ratio: 90,
+        admin_id: adminUser.id,
+      });
+      
+      const hurfGame = await this.createGameType({
+        name: "Hurf Game",
+        type: "hurf",
+        description: "Bet on a single digit. Win if your digit appears in the result.",
+        min_bet_amount: 10,
+        max_bet_amount: 5000,
+        payout_ratio: 9,
+        admin_id: adminUser.id,
+      });
+      
+      const crossGame = await this.createGameType({
+        name: "Cross Game",
+        type: "cross",
+        description: "Bet on numbers appearing in a specific pattern. Higher risk, higher rewards.",
+        min_bet_amount: 10,
+        max_bet_amount: 2000,
+        payout_ratio: 12,
+        admin_id: adminUser.id,
+      });
+      
+      const oddEvenGame = await this.createGameType({
+        name: "Odd-Even Game",
+        type: "odd_even",
+        description: "Bet on whether the result will be an odd or even number. Simple and popular.",
+        min_bet_amount: 10,
+        max_bet_amount: 20000,
+        payout_ratio: 2,
+        admin_id: adminUser.id,
+      });
+      
+      // Create markets
+      const openMarket = await this.createMarket({
+        name: "Morning Star Market",
+        description: "Daily morning market with all game types available",
+        status: "open",
+        open_time: new Date(new Date().setHours(9, 0, 0, 0)),
+        close_time: new Date(new Date().setHours(12, 0, 0, 0)),
+        result: null,
+        admin_id: adminUser.id,
+      });
+      
+      const closedMarket = await this.createMarket({
+        name: "Evening Glory Market",
+        description: "Daily evening market with all game types available",
+        status: "closed",
+        open_time: new Date(new Date().setHours(15, 0, 0, 0)),
+        close_time: new Date(new Date().setHours(18, 0, 0, 0)),
+        result: "27",
+        admin_id: adminUser.id,
+      });
+      
+      // Add game types to markets
+      await this.addGameToMarket({
+        market_id: openMarket.id,
+        game_type_id: jodiGame.id,
+      });
+      
+      await this.addGameToMarket({
+        market_id: openMarket.id,
+        game_type_id: hurfGame.id,
+      });
+      
+      await this.addGameToMarket({
+        market_id: openMarket.id,
+        game_type_id: crossGame.id,
+      });
+      
+      await this.addGameToMarket({
+        market_id: openMarket.id,
+        game_type_id: oddEvenGame.id,
+      });
+      
+      await this.addGameToMarket({
+        market_id: closedMarket.id,
+        game_type_id: jodiGame.id,
+      });
+      
+      // Create some sample bets
+      const bet1 = await this.createBet({
+        user_id: playerUser.id,
+        market_id: openMarket.id,
+        game_type_id: jodiGame.id,
+        selected_number: "27",
+        bet_amount: 100,
+        potential_winnings: 9000,
+        is_subadmin_transaction: false,
+      });
+      
+      // Create a direct bet with status won (bypassing the normal flow)
+      const bet2: Bet = {
+        id: this.betCurrentId++,
+        user_id: playerUser.id,
+        market_id: closedMarket.id,
+        game_type_id: jodiGame.id,
+        selected_number: "27",
+        bet_amount: 50,
+        potential_winnings: 4500,
+        status: "won",
+        created_at: new Date(new Date().setDate(new Date().getDate() - 1)),
+        updated_at: new Date(),
+      };
+      this.bets.set(bet2.id, bet2);
+      
+      // Create some sample transactions (directly to avoid balance changes)
+      const tx1: Transaction = {
+        id: this.transactionCurrentId++,
+        user_id: playerUser.id,
+        type: "deposit",
+        amount: 1000,
+        status: "approved",
+        remarks: "Initial deposit",
+        approver_id: subadminUser.id,
+        reference_id: null,
+        is_subadmin_transaction: false,
+        created_at: new Date(new Date().setDate(new Date().getDate() - 7)),
+        updated_at: new Date(new Date().setDate(new Date().getDate() - 7)),
+      };
+      this.transactions.set(tx1.id, tx1);
+      
+      const tx3: Transaction = {
+        id: this.transactionCurrentId++,
+        user_id: playerUser.id,
+        type: "winning",
+        amount: 4500,
+        status: "approved",
+        remarks: "Winning from Evening Glory Market",
+        reference_id: bet2.id,
+        is_subadmin_transaction: false,
+        created_at: new Date(new Date().setDate(new Date().getDate() - 1)),
+        updated_at: new Date(new Date().setDate(new Date().getDate() - 1)),
+      };
+      this.transactions.set(tx3.id, tx3);
+      
+      const tx4: Transaction = {
+        id: this.transactionCurrentId++,
+        user_id: playerUser.id,
+        type: "withdrawal",
+        amount: 2000,
+        status: "pending",
+        remarks: "Withdrawal request",
+        is_subadmin_transaction: false,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      this.transactions.set(tx4.id, tx4);
+      
+    } catch (error) {
+      console.error("Error initializing sample data:", error);
+    }
   }
 
   // User operations

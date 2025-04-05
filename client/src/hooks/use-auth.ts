@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, UseMutationResult } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '../lib/queryClient';
 import { useToast } from './use-toast';
 
@@ -23,6 +23,8 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  loginMutation: UseMutationResult<User, Error, { username: string; password: string }>;
+  registerMutation: UseMutationResult<User, Error, any>;
 }
 
 // Create auth context with default values
@@ -31,6 +33,14 @@ export const AuthContext = createContext<AuthContextType>({
   isLoading: false,
   login: async () => {},
   logout: async () => {},
+  loginMutation: {
+    mutate: () => {},
+    mutateAsync: async () => ({ id: 0, username: '', name: '', email: '', role: 'player', wallet_balance: 0 }),
+  } as any,
+  registerMutation: {
+    mutate: () => {},
+    mutateAsync: async () => ({ id: 0, username: '', name: '', email: '', role: 'player', wallet_balance: 0 }),
+  } as any,
 });
 
 // Custom hook to use auth context
@@ -125,10 +135,37 @@ export function useAuthState(): AuthContextType {
     await logoutMutation.mutateAsync();
   };
 
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      return apiRequest<User>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    },
+    onSuccess: (data) => {
+      setUser(data);
+      toast({
+        title: 'Registration successful',
+        description: `Welcome, ${data.name}!`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Registration failed',
+        description: error.message || 'Could not create account',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     user,
-    isLoading: isLoading || loginMutation.isPending || logoutMutation.isPending,
+    isLoading: isLoading || loginMutation.isPending || logoutMutation.isPending || registerMutation.isPending,
     login,
-    logout
+    logout,
+    loginMutation,
+    registerMutation,
   };
 }
