@@ -28,7 +28,7 @@ export default function Home() {
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-background to-muted">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto max-w-7xl px-4 md:px-6">
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
             <div className="flex flex-col justify-center space-y-4">
               <div className="space-y-2">
@@ -75,13 +75,13 @@ export default function Home() {
 
       {/* Features Section */}
       <section className="w-full py-12 md:py-24 bg-background">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Why Choose Our Platform
               </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed mx-auto">
                 Sata Matka offers a secure, transparent, and enjoyable gaming experience with multiple game types.
               </p>
             </div>
@@ -129,13 +129,13 @@ export default function Home() {
 
       {/* How It Works Section */}
       <section className="w-full py-12 md:py-24 bg-muted">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 How It Works
               </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed mx-auto">
                 Getting started with Sata Matka is easy. Follow these simple steps to begin your gaming journey.
               </p>
             </div>
@@ -183,18 +183,18 @@ export default function Home() {
 
       {/* Game Types Section */}
       <section className="w-full py-12 md:py-24 bg-background">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-10">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Our Game Types
               </h2>
-              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
+              <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed mx-auto">
                 Explore the variety of traditional Matka games available on our platform.
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -273,7 +273,7 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="w-full py-12 md:py-24 bg-primary text-primary-foreground">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
