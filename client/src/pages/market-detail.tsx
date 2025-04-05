@@ -273,13 +273,17 @@ export default function MarketDetail({ id }: MarketDetailProps) {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">{market.name}</h1>
-            <Badge variant={market.status === "open" ? "success" : "secondary"}>
-              {market.status.toUpperCase()}
+            <h1 className="text-3xl font-bold">{market?.name || 'Market Details'}</h1>
+            <Badge variant={market?.status === "open" ? "success" : "secondary"}>
+              {market?.status ? market.status.toUpperCase() : 'LOADING'}
             </Badge>
           </div>
           <p className="text-muted-foreground mt-1">
-            {format(new Date(market.open_time), 'PPP')} • {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
+            {market?.open_time && market?.close_time ? (
+              <>
+                {format(new Date(market.open_time), 'PPP')} • {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
+              </>
+            ) : 'Market timing information unavailable'}
           </p>
         </div>
         
@@ -373,10 +377,12 @@ export default function MarketDetail({ id }: MarketDetailProps) {
               <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
               <div>
                 <p className="font-medium">
-                  {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
+                  {market?.open_time && market?.close_time ? (
+                    <>{format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}</>
+                  ) : 'Time not specified'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(market.open_time), 'EEEE, MMMM d, yyyy')}
+                  {market?.open_time ? format(new Date(market.open_time), 'EEEE, MMMM d, yyyy') : 'Date not specified'}
                 </p>
               </div>
             </div>
@@ -616,8 +622,8 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                         <TableRow key={bet.id}>
                           <TableCell className="font-medium">{bet.user_name}</TableCell>
                           <TableCell>{bet.game_type_name}</TableCell>
-                          <TableCell>{bet.number}</TableCell>
-                          <TableCell>₹{formatWalletBalance({ wallet_balance: bet.amount })}</TableCell>
+                          <TableCell>{bet.selected_number}</TableCell>
+                          <TableCell>₹{formatWalletBalance({ wallet_balance: bet.bet_amount || 0 })}</TableCell>
                           <TableCell>
                             <Badge variant={getBetStatusVariant(bet.status)}>
                               {bet.status.toUpperCase()}
@@ -625,9 +631,9 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                           </TableCell>
                           <TableCell>
                             {bet.status === 'won' 
-                              ? `₹${formatWalletBalance({ wallet_balance: bet.payout || 0 })}` 
+                              ? `₹${formatWalletBalance({ wallet_balance: bet.potential_winnings || 0 })}` 
                               : bet.status === 'pending' 
-                                ? `₹${formatWalletBalance({ wallet_balance: bet.amount * (bet.payout_multiplier || 1) })}` 
+                                ? `₹${formatWalletBalance({ wallet_balance: bet.potential_winnings || 0 })}` 
                                 : '-'}
                           </TableCell>
                         </TableRow>
@@ -656,8 +662,8 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                     </div>
                     <div>
                       <p className="text-sm font-medium">Status</p>
-                      <Badge variant={market.status === "open" ? "success" : "secondary"}>
-                        {market.status.toUpperCase()}
+                      <Badge variant={market?.status === "open" ? "success" : "secondary"}>
+                        {market?.status ? market.status.toUpperCase() : 'LOADING'}
                       </Badge>
                     </div>
                   </div>
@@ -672,11 +678,11 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                       <p className="text-sm font-medium">Open Time</p>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <p>{format(new Date(market.open_time), 'PPP')}</p>
+                        <p>{market?.open_time ? format(new Date(market.open_time), 'PPP') : 'Date not specified'}</p>
                       </div>
                       <div className="flex items-center mt-1">
                         <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <p>{format(new Date(market.open_time), 'h:mm a')}</p>
+                        <p>{market?.open_time ? format(new Date(market.open_time), 'h:mm a') : 'Time not specified'}</p>
                       </div>
                     </div>
                     
@@ -684,22 +690,23 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                       <p className="text-sm font-medium">Close Time</p>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <p>{format(new Date(market.close_time), 'PPP')}</p>
+                        <p>{market?.close_time ? format(new Date(market.close_time), 'PPP') : 'Date not specified'}</p>
                       </div>
                       <div className="flex items-center mt-1">
                         <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                        <p>{format(new Date(market.close_time), 'h:mm a')}</p>
+                        <p>{market?.close_time ? format(new Date(market.close_time), 'h:mm a') : 'Time not specified'}</p>
                       </div>
                     </div>
                   </div>
                   
-                  {market.result && (
+                  {market?.result && (
                     <div>
                       <p className="text-sm font-medium">Declared Result</p>
                       <p className="text-xl font-semibold">{market.result}</p>
-                      {market.result_declared_at && (
+                      {/* The result_declared_at field doesn't exist in the schema, so we display the market's updated_at instead */}
+                      {market?.updated_at && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Declared on: {format(new Date(market.result_declared_at), 'PPP')} at {format(new Date(market.result_declared_at), 'h:mm a')}
+                          Declared on: {format(new Date(market.updated_at), 'PPP')} at {format(new Date(market.updated_at), 'h:mm a')}
                         </p>
                       )}
                     </div>
@@ -715,7 +722,7 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                     </div>
                   )}
                   
-                  {market.created_at && (
+                  {market?.created_at && (
                     <div>
                       <p className="text-sm font-medium">Created On</p>
                       <p>{format(new Date(market.created_at), 'PPP')}</p>
@@ -742,7 +749,7 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                           <h3 className="font-medium">{gameType.name}</h3>
                           <Badge variant="outline" className="flex items-center">
                             <DollarSign className="h-3 w-3 mr-1" />
-                            {gameType.payout_multiplier}x
+                            {gameType?.payout_ratio || 1}x
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
