@@ -4,7 +4,7 @@ import { Dices, HelpCircle, Shield, Lock, Phone, Mail } from "lucide-react";
 export default function Footer() {
   return (
     <footer className="border-t">
-      <div className="container flex flex-col gap-4 py-10 md:flex-row md:py-8">
+      <div className="container mx-auto max-w-7xl px-4 flex flex-col gap-4 py-10 md:flex-row md:py-8">
         <div className="flex-1">
           <div className="flex h-10 items-center space-x-2">
             <Dices className="h-6 w-6 text-primary" />
@@ -79,7 +79,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t py-6">
-        <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
+        <div className="container mx-auto max-w-7xl px-4 flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-muted-foreground md:order-1">
             © {new Date().getFullYear()} Sata Matka. All rights reserved.
           </p>
