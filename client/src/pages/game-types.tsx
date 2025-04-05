@@ -203,7 +203,7 @@ export default function GameTypes() {
   }
 
   return (
-    <div className="container py-10">
+    <div className="container mx-auto max-w-7xl px-4 py-10">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold">Game Types</h1>

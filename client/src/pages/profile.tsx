@@ -117,7 +117,7 @@ export default function Profile() {
   if (!user) return null;
 
   return (
-    <div className="container py-10">
+    <div className="container mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8">
         <h1 className="text-4xl font-bold">My Profile</h1>
         <p className="text-muted-foreground mt-2">
