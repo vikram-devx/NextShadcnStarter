@@ -15,11 +15,12 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Progress } from "@/components/ui/progress"; 
 
-// Helper function to safely format transaction types
-const formatTransactionType = (transaction: any) => {
-  if (!transaction || !transaction.type) return "Transaction";
-  return formatTransactionType(transaction);
-};
+// Use shared formatters
+import { 
+  formatTransactionType, 
+  formatTransactionAmount, 
+  formatWalletBalance 
+} from "@/lib/formatters";
 
 // Admin-specific dashboard content
 function AdminDashboard({ 
@@ -63,7 +64,7 @@ function AdminDashboard({
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{user?.wallet_balance.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{formatWalletBalance(user)}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Administrator account balance
             </p>
@@ -274,7 +275,7 @@ function AdminDashboard({
                         <p className="font-medium">
                           {transaction.type === 'deposit' || transaction.type === 'winning' 
                             ? '+' : '-'}
-                          ₹{transaction.amount.toFixed(2)}
+                          ₹{formatTransactionAmount(transaction)}
                         </p>
                         <Badge variant={
                           transaction.status === 'approved' ? 'outline' : 
@@ -323,7 +324,7 @@ function AdminDashboard({
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">₹{transaction.amount.toFixed(2)}</p>
+                        <p className="font-medium">₹{formatTransactionAmount(transaction)}</p>
                         <Badge variant="outline">PENDING</Badge>
                       </div>
                     </div>
@@ -463,7 +464,7 @@ function SubadminDashboard({
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{user?.wallet_balance.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{formatWalletBalance(user)}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Your account balance
             </p>
@@ -610,7 +611,7 @@ function SubadminDashboard({
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <p className="text-sm text-muted-foreground">Balance</p>
-                        <p className="font-medium">₹{player.wallet_balance.toFixed(2)}</p>
+                        <p className="font-medium">₹{formatWalletBalance(player)}</p>
                       </div>
                       <Badge variant={player.status === 'active' ? 'outline' : 'destructive'}>
                         {player.status.toUpperCase()}
@@ -707,7 +708,7 @@ function SubadminDashboard({
                         <p className="font-medium">
                           {transaction.type === 'deposit' || transaction.type === 'winning' 
                             ? '+' : '-'}
-                          ₹{transaction.amount.toFixed(2)}
+                          ₹{formatTransactionAmount(transaction)}
                         </p>
                         <Badge variant={
                           transaction.status === 'approved' ? 'outline' : 
@@ -756,7 +757,7 @@ function SubadminDashboard({
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">₹{transaction.amount.toFixed(2)}</p>
+                        <p className="font-medium">₹{formatTransactionAmount(transaction)}</p>
                         <Badge variant="outline">PENDING</Badge>
                       </div>
                     </div>
@@ -800,7 +801,7 @@ function PlayerDashboard({
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{user?.wallet_balance.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{formatWalletBalance(user)}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Available for betting
             </p>
@@ -1022,7 +1023,7 @@ function PlayerDashboard({
                         <p className="font-medium">
                           {transaction.type === 'deposit' || transaction.type === 'winning' 
                             ? '+' : '-'}
-                          ₹{transaction.amount.toFixed(2)}
+                          ₹{formatTransactionAmount(transaction)}
                         </p>
                         <Badge variant={
                           transaction.status === 'approved' ? 'outline' : 

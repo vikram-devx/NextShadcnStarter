@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { Bet } from "@shared/schema";
+import { formatWalletBalance, getBetStatusVariant } from "@/lib/formatters";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -184,7 +185,7 @@ export default function BettingHistory() {
             <CardTitle className="text-sm font-medium">Total Bet Amount</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{summary.totalAmount.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{formatWalletBalance({ wallet_balance: summary.totalAmount })}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Amount wagered
             </p>
@@ -196,7 +197,7 @@ export default function BettingHistory() {
             <CardTitle className="text-sm font-medium">Total Winnings</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{summary.totalWinnings.toFixed(2)}</div>
+            <div className="text-2xl font-bold">₹{formatWalletBalance({ wallet_balance: summary.totalWinnings })}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Amount won from bets
             </p>
@@ -315,19 +316,15 @@ export default function BettingHistory() {
                   <TableCell>{bet.market_name || `Market #${bet.market_id}`}</TableCell>
                   <TableCell>{bet.game_type_name || `Game #${bet.game_type_id}`}</TableCell>
                   <TableCell>{bet.number}</TableCell>
-                  <TableCell>₹{bet.amount.toFixed(2)}</TableCell>
+                  <TableCell>₹{formatWalletBalance({ wallet_balance: bet.amount })}</TableCell>
                   <TableCell>
-                    <Badge variant={
-                      bet.status === 'won' ? 'success' : 
-                      bet.status === 'lost' ? 'destructive' : 
-                      'outline'
-                    }>
+                    <Badge variant={getBetStatusVariant(bet.status)}>
                       {bet.status.toUpperCase()}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     {bet.status === 'won' 
-                      ? `₹${bet.payout?.toFixed(2)}` 
+                      ? `₹${formatWalletBalance({ wallet_balance: bet.payout || 0 })}` 
                       : bet.status === 'pending' 
                         ? 'Pending' 
                         : '-'}

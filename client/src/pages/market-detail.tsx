@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { Market, GameType, Bet, insertBetSchema } from "@shared/schema";
+import { formatWalletBalance, getBetStatusVariant } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -211,8 +212,8 @@ export default function MarketDetail({ id }: MarketDetailProps) {
 
   // Handle bet form submission
   const onBetSubmit = (data: BetFormValues) => {
-    // Check if user has enough balance
-    if (user && user.wallet_balance < data.amount) {
+    // Check if user has enough balance (using safe access)
+    if (!user || typeof user.wallet_balance !== 'number' || user.wallet_balance < data.amount) {
       toast({
         title: "Insufficient funds",
         description: "You don't have enough balance to place this bet. Please add funds to your wallet.",
@@ -545,7 +546,7 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                             />
                           </FormControl>
                           <FormDescription>
-                            Your wallet balance: ₹{user?.wallet_balance.toFixed(2)}
+                            Your wallet balance: ₹{formatWalletBalance(user)}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -556,7 +557,7 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                       <div className="p-4 bg-muted rounded-md">
                         <h4 className="font-medium mb-2">Potential Payout</h4>
                         <p className="text-sm">
-                          If you win: ₹{(betForm.getValues('amount') * (selectedGameType?.payout_multiplier || 1)).toFixed(2)}
+                          If you win: ₹{formatWalletBalance({ wallet_balance: betForm.getValues('amount') * (selectedGameType?.payout_multiplier || 1) })}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           Payout rate: {selectedGameType?.payout_multiplier}x
@@ -616,21 +617,17 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                           <TableCell className="font-medium">{bet.user_name}</TableCell>
                           <TableCell>{bet.game_type_name}</TableCell>
                           <TableCell>{bet.number}</TableCell>
-                          <TableCell>₹{bet.amount.toFixed(2)}</TableCell>
+                          <TableCell>₹{formatWalletBalance({ wallet_balance: bet.amount })}</TableCell>
                           <TableCell>
-                            <Badge variant={
-                              bet.status === 'won' ? 'success' : 
-                              bet.status === 'lost' ? 'destructive' : 
-                              'outline'
-                            }>
+                            <Badge variant={getBetStatusVariant(bet.status)}>
                               {bet.status.toUpperCase()}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             {bet.status === 'won' 
-                              ? `₹${bet.payout?.toFixed(2)}` 
+                              ? `₹${formatWalletBalance({ wallet_balance: bet.payout || 0 })}` 
                               : bet.status === 'pending' 
-                                ? `₹${(bet.amount * (bet.payout_multiplier || 1)).toFixed(2)}` 
+                                ? `₹${formatWalletBalance({ wallet_balance: bet.amount * (bet.payout_multiplier || 1) })}` 
                                 : '-'}
                           </TableCell>
                         </TableRow>
