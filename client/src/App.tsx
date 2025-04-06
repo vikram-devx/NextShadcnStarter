@@ -12,6 +12,7 @@ import Dashboard from "./pages/dashboard";
 import Profile from "./pages/profile";
 import Markets from "./pages/markets";
 import MarketDetail from "./pages/market-detail";
+import MarketCreate from "./pages/market-create";
 import GameTypes from "./pages/game-types";
 import UserManagement from "./pages/user-management";
 import Transactions from "./pages/transactions";
@@ -81,6 +82,9 @@ function Router() {
           </Route>
           <Route path="/markets">
             <AuthenticatedRoute component={Markets} />
+          </Route>
+          <Route path="/markets/create">
+            <AuthenticatedRoute component={MarketCreate} adminOnly={true} />
           </Route>
           <Route path="/markets/:id">
             {(params) => <AuthenticatedRoute component={MarketDetail} id={params.id} />}
