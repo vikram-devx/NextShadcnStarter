@@ -818,4 +818,561 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from './db';
+import { eq, and, or, desc, isNull, isNotNull, asc, gte, lte, sql } from 'drizzle-orm';
+import connectPg from 'connect-pg-simple';
+import session from 'express-session';
+import { Pool } from '@neondatabase/serverless';
+
+// Database implementation of the IStorage interface
+
+const PostgresSessionStore = connectPg(session);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool, 
+      tableName: 'session',
+      createTableIfMissing: true,
+    });
+  }
+
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUsersBySubadminId(subadminId: number): Promise<User[]> {
+    return db.select().from(users).where(eq(users.subadmin_id, subadminId));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users).orderBy(desc(users.created_at));
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...userData, updated_at: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async blockUser(id: number, blockedBy: number): Promise<User | undefined> {
+    return this.updateUser(id, { status: "blocked" });
+  }
+
+  async unblockUser(id: number, unblockedBy: number): Promise<User | undefined> {
+    return this.updateUser(id, { status: "active" });
+  }
+
+  // Market operations
+  async getMarket(id: number): Promise<Market | undefined> {
+    const [market] = await db.select().from(markets).where(eq(markets.id, id));
+    return market;
+  }
+
+  async getAllMarkets(): Promise<Market[]> {
+    return db.select().from(markets).orderBy(desc(markets.created_at));
+  }
+
+  async getOpenMarkets(): Promise<Market[]> {
+    return db
+      .select()
+      .from(markets)
+      .where(eq(markets.status, "open"))
+      .orderBy(asc(markets.open_time));
+  }
+
+  async createMarket(marketData: InsertMarket): Promise<Market> {
+    const [market] = await db.insert(markets).values(marketData).returning();
+    return market;
+  }
+
+  async updateMarket(id: number, marketData: Partial<Market>): Promise<Market | undefined> {
+    const [market] = await db
+      .update(markets)
+      .set({ ...marketData, updated_at: new Date() })
+      .where(eq(markets.id, id))
+      .returning();
+    return market;
+  }
+
+  async openMarket(id: number): Promise<Market | undefined> {
+    return this.updateMarket(id, { 
+      status: "open",
+      open_time: new Date() 
+    });
+  }
+
+  async closeMarket(id: number): Promise<Market | undefined> {
+    return this.updateMarket(id, { 
+      status: "closed",
+      close_time: new Date() 
+    });
+  }
+
+  async declareResult(id: number, result: string): Promise<Market | undefined> {
+    const updatedMarket = await this.updateMarket(id, { result });
+    if (updatedMarket) {
+      await this.processBetsForMarket(id, result);
+    }
+    return updatedMarket;
+  }
+
+  // Game type operations
+  async getGameType(id: number): Promise<GameType | undefined> {
+    const [gameType] = await db.select().from(gameTypes).where(eq(gameTypes.id, id));
+    return gameType;
+  }
+
+  async getAllGameTypes(): Promise<GameType[]> {
+    return db.select().from(gameTypes).orderBy(asc(gameTypes.name));
+  }
+
+  async createGameType(gameTypeData: InsertGameType): Promise<GameType> {
+    const [gameType] = await db.insert(gameTypes).values(gameTypeData).returning();
+    return gameType;
+  }
+
+  async updateGameType(id: number, gameTypeData: Partial<GameType>): Promise<GameType | undefined> {
+    const [gameType] = await db
+      .update(gameTypes)
+      .set({ ...gameTypeData, updated_at: new Date() })
+      .where(eq(gameTypes.id, id))
+      .returning();
+    return gameType;
+  }
+
+  // Market game operations
+  async getMarketGame(id: number): Promise<MarketGame | undefined> {
+    const [marketGame] = await db.select().from(marketGames).where(eq(marketGames.id, id));
+    return marketGame;
+  }
+
+  async getGamesByMarketId(marketId: number): Promise<GameType[]> {
+    const query = db
+      .select({
+        gameType: gameTypes
+      })
+      .from(marketGames)
+      .innerJoin(gameTypes, eq(marketGames.game_type_id, gameTypes.id))
+      .where(eq(marketGames.market_id, marketId));
+    
+    const result = await query;
+    return result.map(row => row.gameType);
+  }
+
+  async getMarketsByGameTypeId(gameTypeId: number): Promise<Market[]> {
+    const query = db
+      .select({
+        market: markets
+      })
+      .from(marketGames)
+      .innerJoin(markets, eq(marketGames.market_id, markets.id))
+      .where(eq(marketGames.game_type_id, gameTypeId));
+    
+    const result = await query;
+    return result.map(row => row.market);
+  }
+
+  async addGameToMarket(marketGameData: InsertMarketGame): Promise<MarketGame> {
+    try {
+      const [marketGame] = await db
+        .insert(marketGames)
+        .values(marketGameData)
+        .returning();
+      return marketGame;
+    } catch (error) {
+      // Handle unique constraint violation
+      if (error.code === '23505') { // PostgreSQL unique violation
+        throw new Error("This game is already added to the market");
+      }
+      throw error;
+    }
+  }
+
+  async removeGameFromMarket(marketId: number, gameTypeId: number): Promise<boolean> {
+    const result = await db
+      .delete(marketGames)
+      .where(
+        and(
+          eq(marketGames.market_id, marketId),
+          eq(marketGames.game_type_id, gameTypeId)
+        )
+      );
+    
+    return true; // In Drizzle, successful deletion doesn't return count
+  }
+
+  // Bet operations
+  async getBet(id: number): Promise<Bet | undefined> {
+    const [bet] = await db.select().from(bets).where(eq(bets.id, id));
+    return bet;
+  }
+
+  async getUserBets(userId: number): Promise<Bet[]> {
+    return db
+      .select()
+      .from(bets)
+      .where(eq(bets.user_id, userId))
+      .orderBy(desc(bets.created_at));
+  }
+
+  async getMarketBets(marketId: number): Promise<Bet[]> {
+    return db
+      .select()
+      .from(bets)
+      .where(eq(bets.market_id, marketId))
+      .orderBy(desc(bets.created_at));
+  }
+
+  async getAllBets(): Promise<Bet[]> {
+    return db.select().from(bets).orderBy(desc(bets.created_at));
+  }
+
+  async createBet(betData: InsertBet): Promise<Bet> {
+    // Start a transaction
+    return await db.transaction(async (tx) => {
+      // 1. Get the user to check wallet balance
+      const [user] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, betData.user_id));
+      
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      // 2. Get the game type to calculate potential winnings
+      const [gameType] = await tx
+        .select()
+        .from(gameTypes)
+        .where(eq(gameTypes.id, betData.game_type_id));
+      
+      if (!gameType) {
+        throw new Error("Game type not found");
+      }
+      
+      // 3. Check if bet amount is within the allowed range
+      if (betData.bet_amount < gameType.min_bet_amount || 
+          betData.bet_amount > gameType.max_bet_amount) {
+        throw new Error(`Bet amount must be between ${gameType.min_bet_amount} and ${gameType.max_bet_amount}`);
+      }
+      
+      // 4. Check if user has enough balance
+      if (user.wallet_balance < betData.bet_amount) {
+        throw new Error("Insufficient wallet balance");
+      }
+      
+      // 5. Calculate potential winnings
+      const potentialWinnings = betData.bet_amount * gameType.payout_ratio;
+      
+      // 6. Create the bet
+      const [bet] = await tx
+        .insert(bets)
+        .values({
+          ...betData,
+          potential_winnings: potentialWinnings,
+        })
+        .returning();
+        
+      // 7. Deduct amount from user's wallet
+      await tx
+        .update(users)
+        .set({ 
+          wallet_balance: user.wallet_balance - betData.bet_amount,
+          updated_at: new Date()
+        })
+        .where(eq(users.id, betData.user_id));
+        
+      // 8. Create a transaction record for the bet
+      await tx
+        .insert(transactions)
+        .values({
+          user_id: betData.user_id,
+          amount: -betData.bet_amount,
+          type: "bet",
+          description: `Bet placed on market ID ${betData.market_id}`,
+          status: "approved",
+          bet_id: bet.id,
+          is_subadmin_transaction: betData.is_subadmin_transaction || false,
+          created_at: new Date(),
+          updated_at: new Date()
+        });
+        
+      return bet;
+    });
+  }
+
+  async updateBetStatus(id: number, status: 'won' | 'lost'): Promise<Bet | undefined> {
+    const [bet] = await db
+      .update(bets)
+      .set({ status, updated_at: new Date() })
+      .where(eq(bets.id, id))
+      .returning();
+    
+    if (bet && status === 'won') {
+      await this.processBetWinning(bet);
+    }
+    
+    return bet;
+  }
+
+  private async processBetWinning(bet: Bet): Promise<void> {
+    // Process individual winning bet
+    await db.transaction(async (tx) => {
+      // 1. Get the user
+      const [user] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, bet.user_id));
+      
+      if (!user) {
+        throw new Error(`User not found: ${bet.user_id}`);
+      }
+      
+      // 2. Update user's wallet
+      await tx
+        .update(users)
+        .set({ 
+          wallet_balance: user.wallet_balance + bet.potential_winnings,
+          updated_at: new Date()
+        })
+        .where(eq(users.id, bet.user_id));
+        
+      // 3. Create winning transaction
+      await tx
+        .insert(transactions)
+        .values({
+          user_id: bet.user_id,
+          amount: bet.potential_winnings,
+          type: "winning",
+          description: `Winning from bet ID ${bet.id}`,
+          status: "approved",
+          bet_id: bet.id,
+          created_at: new Date(),
+          updated_at: new Date()
+        });
+    });
+  }
+
+  async processBetsForMarket(marketId: number, result: string): Promise<void> {
+    // Get all pending bets for this market
+    const pendingBets = await db
+      .select()
+      .from(bets)
+      .where(
+        and(
+          eq(bets.market_id, marketId),
+          eq(bets.status, "pending")
+        )
+      );
+      
+    // Process each bet based on game type and result
+    for (const bet of pendingBets) {
+      let isWinner = false;
+      
+      // Get the game type to determine winning logic
+      const gameType = await this.getGameType(bet.game_type_id);
+      if (!gameType) continue;
+      
+      // Apply game-specific winning logic
+      switch (gameType.type) {
+        case "jodi":
+          // Exact match for jodi games
+          isWinner = bet.selected_number === result;
+          break;
+          
+        case "hurf":
+          // Match any digit for hurf games
+          isWinner = result.includes(bet.selected_number);
+          break;
+          
+        case "cross":
+          // Game-specific logic for cross games
+          // This would depend on the specific rules of the cross game
+          // For now, implementing a simple pattern match
+          isWinner = bet.selected_number.split('').every(digit => 
+            result.includes(digit)
+          );
+          break;
+          
+        case "odd_even":
+          // Odd/Even logic
+          const resultNum = parseInt(result, 10);
+          if (!isNaN(resultNum)) {
+            if (bet.selected_number.toLowerCase() === "odd") {
+              isWinner = resultNum % 2 !== 0;
+            } else if (bet.selected_number.toLowerCase() === "even") {
+              isWinner = resultNum % 2 === 0;
+            }
+          }
+          break;
+      }
+      
+      // Update bet status and process winning if applicable
+      await this.updateBetStatus(bet.id, isWinner ? "won" : "lost");
+    }
+  }
+
+  // Transaction operations
+  async getTransaction(id: number): Promise<Transaction | undefined> {
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction;
+  }
+
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.user_id, userId))
+      .orderBy(desc(transactions.created_at));
+  }
+
+  async getPendingTransactions(subadminId?: number): Promise<Transaction[]> {
+    if (subadminId) {
+      // For subadmin: get transactions of players under this subadmin
+      const subadminPlayers = await this.getUsersBySubadminId(subadminId);
+      const playerIds = subadminPlayers.map(player => player.id);
+      
+      if (playerIds.length === 0) return [];
+      
+      return db
+        .select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.status, "pending"),
+            or(...playerIds.map(id => eq(transactions.user_id, id)))
+          )
+        )
+        .orderBy(asc(transactions.created_at));
+    }
+    
+    // For admin: get all pending transactions
+    return db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.status, "pending"))
+      .orderBy(asc(transactions.created_at));
+  }
+
+  async createTransaction(txData: InsertTransaction): Promise<Transaction> {
+    // Handle deposit and withdrawal transactions
+    if (txData.type === "deposit" || txData.type === "withdrawal" || txData.type === "adjustment") {
+      const [transaction] = await db
+        .insert(transactions)
+        .values(txData)
+        .returning();
+        
+      return transaction;
+    } else {
+      throw new Error(`Direct creation of ${txData.type} transactions is not allowed`);
+    }
+  }
+
+  async approveTransaction(id: number, approverId: number, remarks?: string): Promise<Transaction | undefined> {
+    return await db.transaction(async (tx) => {
+      // 1. Get the transaction
+      const [transaction] = await tx
+        .select()
+        .from(transactions)
+        .where(eq(transactions.id, id));
+        
+      if (!transaction) {
+        throw new Error("Transaction not found");
+      }
+      
+      if (transaction.status !== "pending") {
+        throw new Error("Only pending transactions can be approved");
+      }
+      
+      // 2. Update transaction status
+      const [updatedTransaction] = await tx
+        .update(transactions)
+        .set({ 
+          status: "approved", 
+          approver_id: approverId,
+          remarks: remarks || null,
+          updated_at: new Date()
+        })
+        .where(eq(transactions.id, id))
+        .returning();
+        
+      // 3. Update user's wallet balance
+      await this.updateWalletBalance(transaction.user_id, transaction.amount);
+      
+      return updatedTransaction;
+    });
+  }
+
+  async rejectTransaction(id: number, approverId: number, remarks?: string): Promise<Transaction | undefined> {
+    const [transaction] = await db
+      .update(transactions)
+      .set({ 
+        status: "rejected", 
+        approver_id: approverId,
+        remarks: remarks || null,
+        updated_at: new Date()
+      })
+      .where(eq(transactions.id, id))
+      .returning();
+      
+    return transaction;
+  }
+
+  async updateWalletBalance(userId: number, amount: number): Promise<User | undefined> {
+    return await db.transaction(async (tx) => {
+      // 1. Get the user
+      const [user] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+        
+      if (!user) {
+        throw new Error("User not found");
+      }
+      
+      // 2. Calculate new balance
+      // For deposits and winnings: positive amount
+      // For withdrawals and bets: negative amount
+      const newBalance = user.wallet_balance + amount;
+      
+      if (newBalance < 0) {
+        throw new Error("Insufficient balance");
+      }
+      
+      // 3. Update the user's wallet
+      const [updatedUser] = await tx
+        .update(users)
+        .set({ 
+          wallet_balance: newBalance,
+          updated_at: new Date()
+        })
+        .where(eq(users.id, userId))
+        .returning();
+        
+      return updatedUser;
+    });
+  }
+}
+
+// Use memory storage for development, database storage for production
+// export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

@@ -1,0 +1,96 @@
+# Sata Matka Gaming Platform Database Connection Guide
+
+## Database Setup Instructions
+
+1. **Initial Setup**
+   The project has a PostgreSQL database already configured with the necessary environment variables.
+
+2. **Database Schema Setup**
+   To set up the database schema and load test data:
+   ```bash
+   # Connect to the PostgreSQL database
+   psql $DATABASE_URL
+   
+   # Or run the setup.sql directly
+   psql $DATABASE_URL -f db-setup/setup.sql
+   ```
+
+3. **Environment Variables**
+   The following environment variables are automatically set up in the Replit environment:
+   - DATABASE_URL: Full connection string for PostgreSQL
+   - PGHOST: PostgreSQL server hostname
+   - PGPORT: PostgreSQL server port
+   - PGUSER: PostgreSQL username
+   - PGPASSWORD: PostgreSQL password
+   - PGDATABASE: PostgreSQL database name
+
+## Connecting to the Database in Code
+
+### Using Drizzle ORM (already set up in the project)
+
+The project is already set up to use Drizzle ORM to connect to the database. The connection is established in the `server/db.ts` file:
+
+```typescript
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from '../shared/schema';
+
+// For a direct postgres client
+export const client = postgres(process.env.DATABASE_URL!);
+
+// For use with drizzle ORM
+export const db = drizzle(client, { schema });
+```
+
+### Database Storage Implementation 
+
+The `server/storage.ts` file should be updated to use the database connection instead of in-memory storage:
+
+```typescript
+import { db } from './db';
+import { eq, and, or } from 'drizzle-orm';
+import { 
+  users, markets, gameTypes, marketGames, bets, transactions,
+  type User, type Market, type GameType, type MarketGame, type Bet, type Transaction,
+  type InsertUser, type InsertMarket, type InsertGameType, type InsertMarketGame, type InsertBet, type InsertTransaction
+} from '@shared/schema';
+
+export class DatabaseStorage implements IStorage {
+  // Implement the IStorage interface using Drizzle ORM and the db connection
+  // Example:
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+  
+  // ... implement the rest of the methods
+}
+
+export const storage = new DatabaseStorage();
+```
+
+## Troubleshooting Database Connection
+
+If you encounter any database connection issues:
+
+1. Verify the environment variables are set correctly:
+   ```bash
+   echo $DATABASE_URL
+   ```
+
+2. Test the connection:
+   ```bash
+   psql $DATABASE_URL -c "SELECT 1"
+   ```
+
+3. Check PostgreSQL service status:
+   ```bash
+   pg_isready -h $PGHOST -p $PGPORT
+   ```
+
+4. If you need to recreate the database:
+   ```bash
+   dropdb -h $PGHOST -p $PGPORT -U $PGUSER $PGDATABASE
+   createdb -h $PGHOST -p $PGPORT -U $PGUSER $PGDATABASE
+   psql $DATABASE_URL -f db-setup/setup.sql
+   ```
