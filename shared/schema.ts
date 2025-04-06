@@ -32,6 +32,7 @@ export const markets = pgTable("markets", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  banner_image: text("banner_image"),
   status: marketStatusEnum("status").notNull().default('closed'),
   open_time: timestamp("open_time"),
   close_time: timestamp("close_time"),

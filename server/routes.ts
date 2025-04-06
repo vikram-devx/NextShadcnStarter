@@ -270,6 +270,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Set admin ID from session
       validatedData.data.admin_id = req.session.userId;
+      
+      // Handle optional banner image field
+      if (!validatedData.data.banner_image || validatedData.data.banner_image === '') {
+        delete validatedData.data.banner_image;
+      }
 
       const market = await storage.createMarket(validatedData.data);
       res.status(201).json(market);

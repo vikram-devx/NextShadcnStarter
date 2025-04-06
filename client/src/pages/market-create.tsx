@@ -39,12 +39,16 @@ import {
 const marketFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
   description: z.string().optional(),
-  date: z.date({
-    required_error: "Please select a date",
+  banner_image: z.string().optional(),
+  open_date: z.date({
+    required_error: "Please select an opening date",
   }),
   open_time_hour: z.string().min(1, "Required"),
   open_time_minute: z.string().min(1, "Required"),
   open_time_ampm: z.string().min(1, "Required"),
+  close_date: z.date({
+    required_error: "Please select a closing date",
+  }),
   close_time_hour: z.string().min(1, "Required"),
   close_time_minute: z.string().min(1, "Required"),
   close_time_ampm: z.string().min(1, "Required"),
@@ -78,10 +82,12 @@ export default function MarketCreate() {
     defaultValues: {
       name: "",
       description: "",
-      date: new Date(),
+      banner_image: "",
+      open_date: new Date(),
       open_time_hour: "9",
       open_time_minute: "00",
       open_time_ampm: "AM",
+      close_date: new Date(),
       close_time_hour: "11",
       close_time_minute: "00",
       close_time_ampm: "AM",
@@ -94,8 +100,8 @@ export default function MarketCreate() {
   const createMarketMutation = useMutation({
     mutationFn: async (formData: MarketFormValues) => {
       // Convert form data to market data
-      const openDate = new Date(formData.date);
-      const closeDate = new Date(formData.date);
+      const openDate = new Date(formData.open_date);
+      const closeDate = new Date(formData.close_date);
       
       // Parse hours properly accounting for AM/PM
       let openHour = parseInt(formData.open_time_hour);
@@ -124,6 +130,7 @@ export default function MarketCreate() {
       const marketData = {
         name: formData.name,
         description: formData.description || null,
+        banner_image: formData.banner_image || null,
         open_time: openDate.toISOString(),
         close_time: closeDate.toISOString(),
         status: formData.status,
@@ -256,6 +263,27 @@ export default function MarketCreate() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="banner_image"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Banner Image URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter image URL for market banner"
+                          {...field}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        URL for an image to display on the market card
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
@@ -297,10 +325,10 @@ export default function MarketCreate() {
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="date"
+                  name="open_date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
+                      <FormLabel>Opening Date</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -330,7 +358,49 @@ export default function MarketCreate() {
                         </PopoverContent>
                       </Popover>
                       <FormDescription>
-                        The date when this market is active
+                        The date when this market opens for betting
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="close_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Closing Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        The date when this market closes for betting
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

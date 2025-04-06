@@ -97,19 +97,35 @@ export default function Markets() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredMarkets?.map((market) => (
-                <Card key={market.id} className="overflow-hidden">
-                  <CardHeader>
+                <Card key={market.id} className="overflow-hidden flex flex-col h-full">
+                  {market.banner_image && (
+                    <div className="w-full h-48 relative">
+                      <img 
+                        src={market.banner_image} 
+                        alt={market.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant={market.status === "open" ? "success" : "secondary"}>
+                          {market.status.toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                  <CardHeader className={market.banner_image ? 'pb-2 pt-4' : ''}>
                     <div className="flex justify-between items-center">
                       <CardTitle className="text-xl">{market.name}</CardTitle>
-                      <Badge variant={market.status === "open" ? "success" : "secondary"}>
-                        {market.status.toUpperCase()}
-                      </Badge>
+                      {!market.banner_image && (
+                        <Badge variant={market.status === "open" ? "success" : "secondary"}>
+                          {market.status.toUpperCase()}
+                        </Badge>
+                      )}
                     </div>
                     <CardDescription>
-                      {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
+                      {format(new Date(market.open_time), 'PPP')} • {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-grow">
                     <div className="space-y-4">
                       <div>
                         <h4 className="text-sm font-medium mb-2">Available Games</h4>
@@ -135,7 +151,7 @@ export default function Markets() {
                       )}
                     </div>
                   </CardContent>
-                  <CardFooter className="bg-muted/50 pt-6">
+                  <CardFooter className="bg-muted/50 pt-6 mt-auto">
                     <Button 
                       onClick={() => navigate(`/markets/${market.id}`)}
                       className="w-full"

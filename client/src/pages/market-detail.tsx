@@ -447,22 +447,53 @@ export default function MarketDetail({ id }: MarketDetailProps) {
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Markets
       </Button>
       
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">{market?.name || 'Market Details'}</h1>
-            <Badge variant={market?.status === "open" ? "success" : "secondary"}>
-              {market?.status ? market.status.toUpperCase() : 'LOADING'}
-            </Badge>
+      {market?.banner_image && (
+        <div className="w-full h-64 mb-6 rounded-lg overflow-hidden relative">
+          <img 
+            src={market.banner_image} 
+            alt={market.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+          <div className="absolute bottom-6 left-6 right-6">
+            <h1 className="text-4xl font-bold text-background">{market?.name || 'Market Details'}</h1>
+            <div className="flex items-center gap-3 mt-2">
+              <Badge 
+                variant={market?.status === "open" ? "success" : "secondary"}
+                className="px-3 py-1 text-base"
+              >
+                {market?.status ? market.status.toUpperCase() : 'LOADING'}
+              </Badge>
+              <p className="text-background/90 font-medium">
+                {market?.open_time && market?.close_time ? (
+                  <>
+                    {format(new Date(market.open_time), 'PPP')} • {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
+                  </>
+                ) : 'Market timing information unavailable'}
+              </p>
+            </div>
           </div>
-          <p className="text-muted-foreground mt-1">
-            {market?.open_time && market?.close_time ? (
-              <>
-                {format(new Date(market.open_time), 'PPP')} • {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
-              </>
-            ) : 'Market timing information unavailable'}
-          </p>
         </div>
+      )}
+      
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+        {!market?.banner_image && (
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">{market?.name || 'Market Details'}</h1>
+              <Badge variant={market?.status === "open" ? "success" : "secondary"}>
+                {market?.status ? market.status.toUpperCase() : 'LOADING'}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground mt-1">
+              {market?.open_time && market?.close_time ? (
+                <>
+                  {format(new Date(market.open_time), 'PPP')} • {format(new Date(market.open_time), 'h:mm a')} - {format(new Date(market.close_time), 'h:mm a')}
+                </>
+              ) : 'Market timing information unavailable'}
+            </p>
+          </div>
+        )}
         
         {user?.role === 'admin' && (
           <div className="flex gap-3">
