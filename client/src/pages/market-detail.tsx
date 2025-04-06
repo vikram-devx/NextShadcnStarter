@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
-import { Market, GameType, Bet, insertBetSchema } from "@shared/schema";
+import { Market, GameType, Bet, insertBetSchema, insertMarketGameSchema } from "@shared/schema";
 import { formatWalletBalance, getBetStatusVariant } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +37,7 @@ import { format } from "date-fns";
 import { useLocation } from "wouter";
 import { 
   Loader2, ArrowLeft, Clock, AlertTriangle, CheckCircle, 
-  Calendar, User, DollarSign 
+  Calendar, User, DollarSign, Plus, X
 } from "lucide-react";
 import { useState } from "react";
 
@@ -61,12 +61,189 @@ const resultFormSchema = z.object({
 
 type ResultFormValues = z.infer<typeof resultFormSchema>;
 
+// Component for adding games to a market
+function AddGameToMarketForm({ 
+  marketId,
+  existingGames
+}: { 
+  marketId: number;
+  existingGames: GameType[];
+}) {
+  const { toast } = useToast();
+  
+  // Create a schema for adding games to the market
+  const addGameSchema = z.object({
+    game_type_id: z.coerce.number().min(1, "Please select a game type")
+  });
+
+  type AddGameFormValues = z.infer<typeof addGameSchema>;
+  
+  // Initialize form
+  const form = useForm<AddGameFormValues>({
+    resolver: zodResolver(addGameSchema),
+    defaultValues: {
+      game_type_id: 0,
+    },
+  });
+  
+  // Fetch all available game types
+  const { data: allGameTypes, isLoading } = useQuery({
+    queryKey: ['/api/game-types'],
+    queryFn: getQueryFn<GameType[]>({ on401: "returnNull" }),
+  });
+  
+  // Mutation for adding a game to the market
+  const addGameMutation = useMutation({
+    mutationFn: async (data: AddGameFormValues) => {
+      const marketGameData = {
+        market_id: marketId,
+        game_type_id: data.game_type_id,
+      };
+      return apiRequest('/api/market-games', {
+        method: 'POST',
+        body: JSON.stringify(marketGameData),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Game added",
+        description: "The game has been added to the market successfully."
+      });
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/markets', marketId, 'games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/markets'] });
+      form.reset();
+      // Close dialog by clicking the close button
+      document.querySelector('[data-dialog-close="true"]')?.dispatchEvent(
+        new MouseEvent('click', { bubbles: true })
+      );
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add game",
+        description: error.message || "An error occurred while adding the game to the market.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Filter out already added games
+  const availableGameTypes = allGameTypes?.filter(gameType => 
+    !existingGames.some(existing => existing.id === gameType.id)
+  ) || [];
+  
+  // Handle form submission
+  const onSubmit = (data: AddGameFormValues) => {
+    addGameMutation.mutate(data);
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-4">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+        <FormField
+          control={form.control}
+          name="game_type_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Game Type</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value.toString()}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a game type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {availableGameTypes.length === 0 ? (
+                    <SelectItem value="0" disabled>
+                      No available games to add
+                    </SelectItem>
+                  ) : (
+                    availableGameTypes.map(gameType => (
+                      <SelectItem key={gameType.id} value={gameType.id.toString()}>
+                        {gameType.name} - Payout {gameType.payout_ratio}x
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Select a game type to add to this market
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" type="button">Cancel</Button>
+          </DialogClose>
+          <Button 
+            type="submit" 
+            disabled={addGameMutation.isPending || availableGameTypes.length === 0}
+          >
+            {addGameMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...
+              </>
+            ) : "Add Game"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+}
+
 export default function MarketDetail({ id }: MarketDetailProps) {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const marketId = parseInt(id);
   const [selectedGameType, setSelectedGameType] = useState<GameType | null>(null);
+  
+  // Mutation for removing a game from the market
+  const removeGameMutation = useMutation({
+    mutationFn: async (gameTypeId: number) => {
+      return apiRequest(`/api/market-games/${marketId}/${gameTypeId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Game removed",
+        description: "The game has been removed from the market."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/markets', marketId, 'games'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/markets'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to remove game",
+        description: error.message || "An error occurred while removing the game from the market.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Handle removing a game from the market
+  const removeGameFromMarket = (gameTypeId: number) => {
+    if (!user || user.role !== 'admin') return;
+    
+    if (confirm('Are you sure you want to remove this game from the market?')) {
+      removeGameMutation.mutate(gameTypeId);
+    }
+  };
 
   // Initialize betting form
   const betForm = useForm<BetFormValues>({
@@ -733,13 +910,57 @@ export default function MarketDetail({ id }: MarketDetailProps) {
             </Card>
             
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Available Games</CardTitle>
+                {user?.role === 'admin' && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Plus className="h-4 w-4 mr-2" /> Add Game
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Game to Market</DialogTitle>
+                        <DialogDescription>
+                          Select a game type to add to {market.name}
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <AddGameToMarketForm 
+                        marketId={marketId} 
+                        existingGames={gameTypes || []} 
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
               </CardHeader>
               <CardContent>
                 {!gameTypes || gameTypes.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">No games have been added to this market.</p>
+                    {user?.role === 'admin' && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="mt-4">
+                            <Plus className="h-4 w-4 mr-2" /> Add Game
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Add Game to Market</DialogTitle>
+                            <DialogDescription>
+                              Select a game type to add to {market.name}
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          <AddGameToMarketForm 
+                            marketId={marketId} 
+                            existingGames={[]} 
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -747,10 +968,22 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                       <div key={gameType.id} className="pb-4 border-b last:border-0">
                         <div className="flex justify-between items-start">
                           <h3 className="font-medium">{gameType.name}</h3>
-                          <Badge variant="outline" className="flex items-center">
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            {gameType?.payout_ratio || 1}x
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="flex items-center">
+                              <DollarSign className="h-3 w-3 mr-1" />
+                              {gameType?.payout_ratio || 1}x
+                            </Badge>
+                            {user?.role === 'admin' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => removeGameFromMarket(gameType.id)}
+                              >
+                                <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           {gameType.description}

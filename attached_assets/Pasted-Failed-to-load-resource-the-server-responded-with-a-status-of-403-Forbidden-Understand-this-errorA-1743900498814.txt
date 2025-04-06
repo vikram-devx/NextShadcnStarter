@@ -1,0 +1,32 @@
+Failed to load resource: the server responded with a status of 403 (Forbidden)Understand this errorAI
+/api/users:1 
+            
+            
+           Failed to load resource: the server responded with a status of 403 (Forbidden)Understand this errorAI
+chunk-RPCDYKBN.js?v=28354cda:521 Warning: Cannot update a component (`ForwardRef`) while rendering a different component (`AuthenticatedRoute`). To locate the bad setState() call inside `AuthenticatedRoute`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render
+    at AuthenticatedRoute (https://fab73e7f-680a-47b3-865e-adf4c0373af5-00-3cwjvgs3af3nj.riker.replit.dev/src/App.tsx?v=4qHmU4ym1pWrtoBSpuvzf:39:14)
+    at Route (https://fab73e7f-680a-47b3-865e-adf4c0373af5-00-3cwjvgs3af3nj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=28354cda:323:16)
+    at Switch (https://fab73e7f-680a-47b3-865e-adf4c0373af5-00-3cwjvgs3af3nj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=28354cda:379:17)
+    at main
+    at div
+    at Router (https://fab73e7f-680a-47b3-865e-adf4c0373af5-00-3cwjvgs3af3nj.riker.replit.dev/src/App.tsx?v=4qHmU4ym1pWrtoBSpuvzf:90:31)
+    at AuthProvider (https://fab73e7f-680a-47b3-865e-adf4c0373af5-00-3cwjvgs3af3nj.riker.replit.dev/src/components/providers/auth-provider.tsx:19:32)
+    at QueryClientProvider (https://fab73e7f-680a-47b3-865e-adf4c0373af5-00-3cwjvgs3af3nj.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=28354cda:2805:3)
+    at App
+printWarning @ chunk-RPCDYKBN.js?v=28354cda:521Understand this errorAI
+/api/auth/me:1 
+            
+            
+           Failed to load resource: the server responded with a status of 401 (Unauthorized)Understand this errorAI
+favicon.ico:1 
+            
+            
+           Failed to load resource: the server responded with a status of 503 (Service Unavailable)Understand this errorAI
+markets:1 
+            
+            
+           Failed to load resource: the server responded with a status of 503 (Service Unavailable)Understand this errorAI
+favicon.ico:1 
+            
+            
+           Failed to load resource: the server responded with a status of 503 (Service Unavailable)
