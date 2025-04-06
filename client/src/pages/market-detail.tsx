@@ -771,10 +771,10 @@ export default function MarketDetail({ id }: MarketDetailProps) {
                       <div className="p-4 bg-muted rounded-md">
                         <h4 className="font-medium mb-2">Potential Payout</h4>
                         <p className="text-sm">
-                          If you win: ₹{formatWalletBalance({ wallet_balance: betForm.getValues('amount') * (selectedGameType?.payout_multiplier || 1) })}
+                          If you win: ₹{formatWalletBalance({ wallet_balance: betForm.getValues('amount') * (selectedGameType?.payout_ratio || 1) })}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Payout rate: {selectedGameType?.payout_multiplier}x
+                          Payout rate: {selectedGameType?.payout_ratio}x
                         </p>
                       </div>
                     )}
