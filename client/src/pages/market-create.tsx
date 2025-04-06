@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
@@ -177,6 +177,11 @@ export default function MarketCreate() {
     },
   });
 
+  // Initialize selectedGameTypes from form when component mounts
+  useEffect(() => {
+    setSelectedGameTypes(form.getValues("game_types"));
+  }, []);
+
   // Handle form submission
   const onSubmit = (data: MarketFormValues) => {
     createMarketMutation.mutate(data);
@@ -184,10 +189,9 @@ export default function MarketCreate() {
 
   // Handle game type selection
   const toggleGameType = (gameTypeId: number) => {
-    const currentValue = form.getValues("game_types");
-    const updatedValue = currentValue.includes(gameTypeId)
-      ? currentValue.filter(id => id !== gameTypeId)
-      : [...currentValue, gameTypeId];
+    const updatedValue = selectedGameTypes.includes(gameTypeId)
+      ? selectedGameTypes.filter(id => id !== gameTypeId)
+      : [...selectedGameTypes, gameTypeId];
     
     form.setValue("game_types", updatedValue);
     setSelectedGameTypes(updatedValue);
@@ -600,7 +604,7 @@ export default function MarketCreate() {
                 <FormField
                   control={form.control}
                   name="game_types"
-                  render={() => (
+                  render={({ field }) => (
                     <FormItem>
                       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {gameTypes?.map((gameType) => (
@@ -608,12 +612,12 @@ export default function MarketCreate() {
                             key={gameType.id}
                             className={cn(
                               "flex items-start space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:bg-accent transition-colors",
-                              form.getValues("game_types").includes(gameType.id) && "bg-primary/5 border-primary"
+                              selectedGameTypes.includes(gameType.id) && "bg-primary/5 border-primary"
                             )}
                             onClick={() => toggleGameType(gameType.id)}
                           >
                             <Checkbox
-                              checked={form.getValues("game_types").includes(gameType.id)}
+                              checked={selectedGameTypes.includes(gameType.id)}
                               onCheckedChange={() => toggleGameType(gameType.id)}
                               id={`game-type-${gameType.id}`}
                             />
