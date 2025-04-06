@@ -248,7 +248,7 @@ export default function MarketDetail({ id }: MarketDetailProps) {
 
   if (marketError || !market) {
     return (
-      <div className="container py-10">
+      <div className="container mx-auto max-w-7xl px-4 py-10">
         <Button variant="outline" onClick={() => navigate("/markets")} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Markets
         </Button>
@@ -265,7 +265,7 @@ export default function MarketDetail({ id }: MarketDetailProps) {
   }
 
   return (
-    <div className="container py-10">
+    <div className="container mx-auto max-w-7xl px-4 py-10">
       <Button variant="outline" onClick={() => navigate("/markets")} className="mb-6">
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Markets
       </Button>

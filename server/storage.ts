@@ -690,12 +690,23 @@ export class MemStorage implements IStorage {
     return this.transactions.get(id);
   }
   
-  async getUserTransactions(userId: number): Promise<Transaction[]> {
-    return Array.from(this.transactions.values())
+  async getUserTransactions(userId: number): Promise<(Transaction & { user_name?: string })[]> {
+    const transactions = Array.from(this.transactions.values())
       .filter(tx => tx.user_id === userId);
+    
+    // Add user name to each transaction
+    const user = await this.getUser(userId);
+    if (user) {
+      return transactions.map(tx => ({
+        ...tx,
+        user_name: user.name
+      }));
+    }
+    
+    return transactions;
   }
   
-  async getPendingTransactions(subadminId?: number): Promise<Transaction[]> {
+  async getPendingTransactions(subadminId?: number): Promise<(Transaction & { user_name?: string })[]> {
     let pendingTransactions = Array.from(this.transactions.values())
       .filter(tx => tx.status === "pending");
     
@@ -711,7 +722,18 @@ export class MemStorage implements IStorage {
       );
     }
     
-    return pendingTransactions;
+    // Add user name to each transaction
+    const enhancedTransactions = await Promise.all(
+      pendingTransactions.map(async (tx) => {
+        const user = await this.getUser(tx.user_id);
+        return {
+          ...tx,
+          user_name: user ? user.name : `User #${tx.user_id}`
+        };
+      })
+    );
+    
+    return enhancedTransactions;
   }
   
   async createTransaction(txData: InsertTransaction): Promise<Transaction> {

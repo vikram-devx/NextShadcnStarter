@@ -619,6 +619,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all transactions (admin/subadmin only)
+  app.get('/api/transactions', async (req, res) => {
+    try {
+      // Only admins and subadmins can view all transactions
+      if (!req.session.userId || !['admin', 'subadmin'].includes(req.session.userRole)) {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+      
+      // Get all transactions from all users
+      const allTransactions = [];
+      const users = req.session.userRole === 'admin' 
+        ? await storage.getAllUsers()
+        : await storage.getUsersBySubadminId(req.session.userId);
+        
+      for (const user of users) {
+        const userTransactions = await storage.getUserTransactions(user.id);
+        allTransactions.push(...userTransactions);
+      }
+      
+      res.json(allTransactions);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
+  });
+
   app.get('/api/transactions/pending', async (req, res) => {
     try {
       // Only admins and subadmins can view pending transactions
