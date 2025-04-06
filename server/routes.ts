@@ -246,7 +246,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to fetch markets' });
     }
   });
-
+  
+  app.get('/api/markets/:id', async (req, res) => {
+    try {
+      const marketId = parseInt(req.params.id);
+      if (isNaN(marketId) || req.params.id === 'open') {
+        return res.status(400).json({ error: 'Invalid market ID' });
+      }
+      
+      const market = await storage.getMarket(marketId);
+      if (!market) {
+        return res.status(404).json({ error: 'Market not found' });
+      }
+      
+      res.json(market);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch market details' });
+    }
+  });
+  
   app.get('/api/markets/open', async (req, res) => {
     try {
       const openMarkets = await storage.getOpenMarkets();
