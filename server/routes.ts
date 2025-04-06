@@ -469,6 +469,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bet routes
+  app.get('/api/bets', async (req, res) => {
+    try {
+      // Authorization check
+      if (!req.session.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Only admins can see all bets
+      if (req.session.userRole !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
+      // Get all bets
+      const bets = await storage.getAllBets();
+      
+      // Enhance bets with additional info
+      const enhancedBets = await Promise.all(bets.map(async (bet) => {
+        const user = await storage.getUser(bet.user_id);
+        const market = await storage.getMarket(bet.market_id);
+        const gameType = await storage.getGameType(bet.game_type_id);
+        
+        return {
+          ...bet,
+          user_name: user ? user.name : undefined,
+          market_name: market ? market.name : undefined,
+          game_type_name: gameType ? gameType.name : undefined
+        };
+      }));
+      
+      res.json(enhancedBets);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch bets' });
+    }
+  });
+  
+  // Get bets managed by a subadmin
+  app.get('/api/subadmin/bets', async (req, res) => {
+    try {
+      // Authorization check
+      if (!req.session.userId) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+
+      // Only subadmins or admins can access this
+      if (req.session.userRole !== 'subadmin' && req.session.userRole !== 'admin') {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+      
+      let bets = [];
+      
+      if (req.session.userRole === 'admin') {
+        // Admin can see all bets
+        bets = await storage.getAllBets();
+      } else {
+        // Get all users managed by this subadmin
+        const users = await storage.getUsersBySubadminId(req.session.userId);
+        
+        // Get bets for all these users
+        bets = [];
+        for (const user of users) {
+          const userBets = await storage.getUserBets(user.id);
+          bets.push(...userBets);
+        }
+      }
+      
+      // Enhance bets with additional info
+      const enhancedBets = await Promise.all(bets.map(async (bet) => {
+        const user = await storage.getUser(bet.user_id);
+        const market = await storage.getMarket(bet.market_id);
+        const gameType = await storage.getGameType(bet.game_type_id);
+        
+        return {
+          ...bet,
+          user_name: user ? user.name : undefined,
+          market_name: market ? market.name : undefined,
+          game_type_name: gameType ? gameType.name : undefined
+        };
+      }));
+      
+      res.json(enhancedBets);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch subadmin bets' });
+    }
+  });
+  
   app.get('/api/users/:id/bets', async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -495,7 +580,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const bets = await storage.getUserBets(userId);
-      res.json(bets);
+      
+      // Enhance bets with additional info
+      const enhancedBets = await Promise.all(bets.map(async (bet) => {
+        const market = await storage.getMarket(bet.market_id);
+        const gameType = await storage.getGameType(bet.game_type_id);
+        
+        return {
+          ...bet,
+          market_name: market ? market.name : undefined,
+          game_type_name: gameType ? gameType.name : undefined
+        };
+      }));
+      
+      res.json(enhancedBets);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch bets' });
     }

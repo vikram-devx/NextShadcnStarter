@@ -47,6 +47,7 @@ export interface IStorage {
   getBet(id: number): Promise<Bet | undefined>;
   getUserBets(userId: number): Promise<Bet[]>;
   getMarketBets(marketId: number): Promise<Bet[]>;
+  getAllBets(): Promise<Bet[]>;
   createBet(bet: InsertBet): Promise<Bet>;
   updateBetStatus(id: number, status: 'won' | 'lost'): Promise<Bet | undefined>;
   processBetsForMarket(marketId: number, result: string): Promise<void>;
@@ -557,6 +558,10 @@ export class MemStorage implements IStorage {
   async getMarketBets(marketId: number): Promise<Bet[]> {
     return Array.from(this.bets.values())
       .filter(bet => bet.market_id === marketId);
+  }
+  
+  async getAllBets(): Promise<Bet[]> {
+    return Array.from(this.bets.values());
   }
   
   async createBet(betData: InsertBet): Promise<Bet> {
